@@ -1,0 +1,45 @@
+#!/usr/sbin/nft -f
+# ==============================================================================
+# File: 01-nftables-dns-enforcement.nft
+# Role: Perimeter DNS Interception (VLAN 40 IoT) & Plaintext Port-53 Egress Block
+# Lab : Enterprise Encrypted DNS Gateway (Quad9 DoT)
+# ==============================================================================
+
+define WAN_IF       = "eth0"
+define CORP_VLAN_IF = "eth1.20"
+define IOT_VLAN_IF  = "eth1.40"
+
+define QUAD9_V4 = { 9.9.9.9, 149.112.112.112 }
+define QUAD9_V6 = { 2620:fe::fe, 2620:fe::9 }
+
+table inet dns_enforcement {
+
+    chain prerouting_dnat {
+        type nat hook prerouting priority dstnat; policy accept;
+
+        # Transparently intercept hardcoded DNS (e.g., 8.8.8.8:53) on IoT/CCTV VLAN 40
+        # and redirect directly to the local Unbound listener on port 53.
+        iifname $IOT_VLAN_IF meta l4proto { udp, tcp } th dport 53 counter redirect to :53
+    }
+
+    chain forward_dns_guard {
+        type filter hook forward priority filter; policy accept;
+
+        # Prevent LAN/IoT endpoints from bypassing local Unbound via direct WAN port 53
+        oifname $WAN_IF meta l4proto { udp, tcp } th dport 53 counter reject with icmpx type admin-prohibited
+
+        # Prevent unmanaged IoT devices from bypassing policy via unauthorized external DoT (TCP/853)
+        iifname $IOT_VLAN_IF oifname $WAN_IF tcp dport 853 counter drop
+    }
+
+    chain output_dot_egress {
+        type filter hook output priority filter; policy accept;
+
+        # Allow encrypted DNS-over-TLS (TCP/853) strictly to verified Quad9 Anycast nodes
+        oifname $WAN_IF ip daddr $QUAD9_V4 tcp dport 853 ct state new,established counter accept
+        oifname $WAN_IF ip6 daddr $QUAD9_V6 tcp dport 853 ct state new,established counter accept
+
+        # Block accidental plaintext DNS leaks from the gateway itself on WAN interface
+        oifname $WAN_IF meta l4proto { udp, tcp } th dport 53 counter drop
+    }
+}
