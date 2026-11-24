@@ -1,0 +1,69 @@
+<mxfile host="app.diagrams.net" type="device">
+  <diagram id="quad9-dot-topology" name="Quad9-DoT-Architecture">
+    <mxGraphModel dx="1280" dy="760" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1169" pageHeight="720" background="#ffffff" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <mxCell id="title" value="&lt;b style=&quot;font-size:16px;&quot;&gt;Enterprise Encrypted DNS Gateway (Quad9 DoT) &amp;amp; IoT Rogue-DNS Enforcement&lt;/b&gt;&lt;br&gt;&lt;span style=&quot;font-size:12px;color:#475569;&quot;&gt;802.1Q VLAN Policy Enforcement | nftables Port-53 DNAT Interception | Unbound DNSSEC + TLS 1.3 (TCP/853)&lt;/span&gt;" style="text;html=1;strokeColor=none;fillColor=none;align=left;verticalAlign=middle;whiteSpace=wrap;" vertex="1" parent="1">
+          <mxGeometry x="40" y="20" width="900" height="50" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vlan20_box" value="&lt;b&gt;VLAN 20: Corporate Workstations&lt;/b&gt;&lt;br&gt;Subnet: 192.168.20.0/24&lt;br&gt;&lt;br&gt;• Linux (Pop!_OS) &amp;amp; Admin Hosts&lt;br&gt;• DHCP Assigned DNS: 192.168.20.1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="110" width="270" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="vlan40_box" value="&lt;b&gt;VLAN 40: Unmanaged IoT &amp;amp; CCTV&lt;/b&gt;&lt;br&gt;Subnet: 192.168.40.0/24&lt;br&gt;&lt;br&gt;• IP Cameras (2.4 GHz WPA2)&lt;br&gt;• Hardcoded Rogue DNS (e.g. 8.8.8.8:53)&lt;br&gt;• Blocked from RFC1918 East-West LAN" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;align=left;spacingLeft=14;verticalAlign=top;spacingTop=10;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="40" y="340" width="270" height="165" as="geometry" />
+        </mxCell>
+
+        <mxCell id="gw_zone" value="&lt;b style=&quot;font-size:13px;&quot;&gt;Linux Perimeter Security Gateway (192.168.1.1)&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8fafc;strokeColor=#334155;strokeWidth=2;verticalAlign=top;spacingTop=10;dashed=1;" vertex="1" parent="1">
+          <mxGeometry x="410" y="95" width="330" height="430" as="geometry" />
+        </mxCell>
+
+        <mxCell id="nft_box" value="&lt;b&gt;1. Stateful Firewall (nftables)&lt;/b&gt;&lt;br&gt;&lt;br&gt;• &lt;b&gt;NAT Prerouting:&lt;/b&gt; Intercept TCP/UDP 53&lt;br&gt;  from VLAN 40 -&amp;gt; Redirect to 127.0.0.1:53&lt;br&gt;• &lt;b&gt;WAN Egress Filter:&lt;/b&gt; DROP plaintext&lt;br&gt;  outbound port 53 (Bypass Prevention)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#f8cecc;strokeColor=#b85450;align=left;spacingLeft=12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="435" y="145" width="280" height="145" as="geometry" />
+        </mxCell>
+
+        <mxCell id="unbound_box" value="&lt;b&gt;2. Unbound Caching DoT Forwarder&lt;/b&gt;&lt;br&gt;&lt;br&gt;• DNSSEC Root Trust Anchor (AD Flag)&lt;br&gt;• QNAME Minimization &amp;amp; Cache Prefetch&lt;br&gt;• TLS 1.3 Pinning: &lt;b&gt;dns.quad9.net:853&lt;/b&gt;" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;align=left;spacingLeft=12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="435" y="340" width="280" height="150" as="geometry" />
+        </mxCell>
+
+        <mxCell id="quad9_box" value="&lt;b style=&quot;font-size:13px;&quot;&gt;Quad9 Anycast Security Cloud&lt;/b&gt;&lt;br&gt;(Bangkok Exchange PoP)&lt;br&gt;&lt;hr&gt;• Primary: &lt;b&gt;9.9.9.9 : 853 (DoT)&lt;/b&gt;&lt;br&gt;• Secondary: &lt;b&gt;149.112.112.112 : 853&lt;/b&gt;&lt;br&gt;• Threat Intelligence Feeds:&lt;br&gt;  Blocks Malware, Phishing &amp;amp; Botnet C2&lt;br&gt;  (Returns NXDOMAIN)&lt;br&gt;• Zero-IP Logging (Swiss Privacy Law)" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#e1d5e7;strokeColor=#9673a6;strokeWidth=2;align=left;spacingLeft=14;verticalAlign=top;spacingTop=12;fontSize=12;" vertex="1" parent="1">
+          <mxGeometry x="850" y="195" width="275" height="240" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge1" value="Standard DNS (UDP/53)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#1d4ed8;strokeWidth=2;fontSize=11;fontStyle=1;" edge="1" parent="1" source="vlan20_box" target="unbound_box">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="360" y="185" />
+              <mxPoint x="360" y="390" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge2" value="Rogue 8.8.8.8:53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b91c1c;strokeWidth=2;dashed=1;fontSize=11;fontStyle=1;" edge="1" parent="1" source="vlan40_box" target="nft_box">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="385" y="422" />
+              <mxPoint x="385" y="218" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+
+        <mxCell id="edge3" value="DNAT Redirect -&amp;gt; 127.0.0.1:53" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#b85450;strokeWidth=2;fontSize=11;" edge="1" parent="1" source="nft_box" target="unbound_box">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <mxCell id="edge4" value="Encrypted DoT Tunnel&lt;br&gt;(TCP/853 TLS 1.3)" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;strokeColor=#15803d;strokeWidth=3;fontSize=11;fontStyle=1;" edge="1" parent="1" source="unbound_box" target="quad9_box">
+          <mxGeometry relative="1" as="geometry">
+            <Array as="points">
+              <mxPoint x="785" y="415" />
+              <mxPoint x="785" y="315" />
+            </Array>
+          </mxGeometry>
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
